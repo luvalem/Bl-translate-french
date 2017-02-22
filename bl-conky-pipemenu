@@ -1,0 +1,163 @@
+#!/bin/bash
+#    bl-conky-pipemenu - Un pipemenu Openbox pour manipuler conky
+#    Copyright (C) 2015 damo <damo@bunsenlabs.org>
+#
+#    Ce programme est un logiciel libre: vous pouvez le redistribuer
+#    et / ou le modifier selon les termes de la Licence Publique 
+#    Générale GNU publiée par la Free Software Foundation,
+#    soit la version 3 de la licence, soit (à votre choix)
+#    toute version ultérieure.
+#
+#    Ce programme est distribué dans l'espoir qu'il sera utile,
+#    Mais SANS AUCUNE GARANTIE; Sans même la garantie implicite de
+#    QUALITÉ MARCHANDE OU ADAPTATION À UN USAGE PARTICULIER.  Voir la
+#    GNU General Public License pour plus de détails.
+#
+#   Vous devriez avoir reçu une copie de la Licence Publique 
+#   Générale GNUavec ce programme.  Sinon, voir 
+#   <http://www.gnu.org/licenses/>.
+
+HELP='    bl-conky-pipemenu Un pipemenu Openbox pourutiliser conky
+    Il est generalement appelé par openbox menu.
+
+Options:
+    -h --help   Affiche ce message
+
+    Si bl-conky-pipemenu est appelé sans options (Methode usuelle),
+    Il produira un fichier xml openbox pipemenu pour la manipulation 
+    des sessions conky.
+
+voir /usr/share/bunsen/docs/fichier-aide-conkyzen.txt and "man conky"
+pour plus d information.
+'
+# look for a help option somewhere
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$HELP"
+        exit 0
+        ;;
+    esac
+done
+
+BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
+
+CONKYDEFAULT="$HOME/.conkyrc"
+CONKYPATH="$HOME/.config/conky"
+CSESSIONFILE="$CONKYPATH/conky-sessionfile"
+SESSIONS="$CONKYPATH/saved-sessions"
+CZEN="bl-conkyzen"
+CSESSION="bl-conky-session"
+HELPFILE="/usr/share/bunsen/docs/fichier-aide-conkyzen.txt"
+
+if ! . "$BL_COMMON_LIBDIR/bl-include.cfg" 2> /dev/null; then
+    echo "Error: Echec de la source bl-include.cfg in $BL_COMMON_LIBDIR" >&2
+    exit 1
+fi
+if [ ! -e "$CSESSIONFILE" ] 2> /dev/null ; then
+    echo "Error: Impossible de trouver un fichier conky-session dans $CONKYPATH" >&2
+    echo "conky -c $HOME/.conkyrc & sleep 1" > "$CSESSIONFILE"
+fi
+if [ ! -e "$SESSIONS" ] 2> /dev/null ; then
+    echo "$0: Impossible de trouver une session sauvegardee dans $CONKYPATH" >&2
+fi
+
+declareDependencies yad
+
+getSessions(){  # read any saved sessions from save-sessions file
+    menuItem "Default" "$CSESSION $CSESSIONFILE"
+    if [ -e "$SESSIONS" ]
+    then
+        while read -r session ;do
+            [[ -z $session ]] && continue   # skip if line is blank
+            menuItem "$session" "$CSESSION $session"
+        done < "$SESSIONS"
+    else
+        echo "$0: Impossible de trouver une session sauvegardee dans $CONKYPATH" >&2
+    fi
+}
+
+loadChooserMenu(){
+    if type "$CZEN" &>/dev/null;then  # bl-conkyzen script found
+        menuItem "Choisir Conky" "$CZEN"
+    fi
+}
+
+loadNewsessionMenu(){
+    if type "$CZEN" &>/dev/null;then  # bl-conkyzen script found
+        menuItem "Nouvelle Session Conky" "$CZEN -z"
+    fi
+}
+
+loadReloadMenu(){
+    if type "$CSESSION" &>/dev/null;then  # bl-conky-session script found
+        menuItem "Recharger Conkys" "$CSESSION"
+    fi
+}
+
+loadSavedsessionSubmenu(){
+    if type "$CSESSION" &>/dev/null;then  # bl-conky-session script found
+        menuSubmenu "Sessions" "Sessions Sauvegardees"
+        getSessions
+        menuSubmenuEnd
+    fi
+}
+
+loadPinMenu(){
+    if type bl-conkypin &>/dev/null;then
+        menuItem "Position Conkys" "bl-conkypin"
+        menuSeparator
+    fi
+}
+
+loadEditMenu(){
+    menuItem "Actuel conkyrc" "bl-text-editor $CONKYDEFAULT"
+    if [[ $(pidof conky) ]];then
+        menuSubmenu "RunningConky" "Conkys Actifs"
+        while read -r session ;do  # get running conkys from sessionfile
+            [[ -z $session ]] && continue
+            CPATH=$(echo "$session" | awk '{print $3}')
+            CONKY=$(echo "$CPATH" | awk -F"/" '{print $(NF-1)"/"$NF }')
+            menuItem "$CONKY" "bl-text-editor $CPATH"
+        done < "$CSESSIONFILE"
+        menuSubmenuEnd
+    else
+        menuItem "Pas de Conky Actif"
+    fi
+}
+
+getConkys(){
+    menuSubmenu "EditConky" "Editer Conkys"
+        if type bl-conkyedit &>/dev/null;then  # bl-conkyedit script found
+            menuItem "Conky Editeur" "bl-conkyedit"
+            loadEditMenu
+        else
+            loadEditMenu
+        fi
+    menuSubmenuEnd
+}
+
+checkHelpfile(){
+    DLG="yad --text-info --center --borders=20 \
+    --title='BunsenLabs Conky Manager Help' \
+    --window-icon=distributor-logo-bunsenlabs \
+    --filename=$HELPFILE --fontname=Monospace \
+    --width=650 --height=700 \
+    --button=OK:0"
+    if [[ -e $HELPFILE ]];then
+        menuItem "Aide Conky" "$DLG"
+    fi
+}
+
+menuStart "Conkymenu" "Conky"
+loadChooserMenu
+loadReloadMenu
+getConkys
+menuSeparator
+loadPinMenu
+loadNewsessionMenu
+loadSavedsessionSubmenu
+menuSeparator
+checkHelpfile
+menuEnd
