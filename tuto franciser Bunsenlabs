@@ -1,0 +1,19 @@
+Traduction Francaise de BunsenLabs
+
+1  -Effectuer le Cb-Welcome (Apparement 2 fois dans mon cas)
+2  -Installer vos programmes préférés.
+3  -Modifier le fichier  "~/.config/user-dirs.locale" en "fr_BE" (dans mon cas)
+4  -Supprimer le fichier "~/.config/user-dirs.dirs"
+5  -Copier le dossier Wallpaper dans home/user/ 
+   "cp -r ~/Pictures/wallpapers/ ~/"
+6  -Supprimer les Dossiers " Desktop Download Templates Public Documents Music Pictures Videos"
+7  -Mettre a jour les Répertoires : "sudo xdg-user-dirs-update"
+8  -Se deconnecter et puis verifier que les dossiers sont bien en Francais.
+9  -Copier le dossier Wallpaper dans Images 
+     "mv ~/wallpapers/ ~/Images/"
+10 -Dans Synaptic selectionner "iceweasel-l10n-fr" et install
+                               " libreoffice-l10n-fr" et install
+11 -Pour le Franciser le menu openbox  voir menu.xml dans github et les pipesmenu traduis.  
+    
+    A préciser pour le menu logout, j'ai préféré le paquet "obsession"
+    "sudo apt-get install obsession"
