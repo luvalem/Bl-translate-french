@@ -1,0 +1,174 @@
+#!/bin/bash
+#    bl-x-www-browser-pipemenu - an Openbox pipemenu for web browsers
+#    Copyright (C) 2012 Philip Newborough   <corenominal@corenominal.org>
+#    Copyright (C) 2013 Aleks-Daniel Jakimenko
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#    Copyright (C) 2015-2016 John Crawley    <john@bunsenlabs.org>
+#    Traduis par Luvalem
+#
+#    Ce programme est un logiciel libre: vous pouvez le redistribuer
+#    et / ou le modifier selon les termes de la Licence Publique 
+#    Générale GNU publiée par la Free Software Foundation,
+#    soit la version 3 de la licence, soit (à votre choix)
+#    toute version ultérieure.
+#
+#    Ce programme est distribué dans l'espoir qu'il sera utile,
+#    Mais SANS AUCUNE GARANTIE; Sans même la garantie implicite de
+#    QUALITÉ MARCHANDE OU ADAPTATION À UN USAGE PARTICULIER.  Voir la
+#    GNU General Public License pour plus de détails.
+#
+#   Vous devriez avoir reçu une copie de la Licence Publique 
+#   Générale GNUavec ce programme.  Sinon, voir 
+#   <http://www.gnu.org/licenses/>.
+
+#   Pour changer les entrées indiqué dans Browsers pipemenu:
+#   edit ".config/openbox/pipemenus.rc"
+
+HELP='    bl-x-www-browser-pipemenu est un pipemenu Openbox pour Navigateur Internet
+    Il devrait normalement être appelé à partir d un menu openbox.
+
+Options (généralement passé du menu):
+    -h --help   Afficher ce message
+    --install   installer un Navigateur Internet
+    (Le navigateur doit etre dans la liste definie dans le fichier config pipemenu)
+    (NOTE: Google Chrome n apparait pas dans le menu dans les systemes 32bit.)
+
+    Si bl-x-www-browser-pipemenu est appelé sans options (la méthode usuelle),
+    Il sortira un openbox pipemenu xml
+    Pour lancer & installer les navigateurs Internet.
+
+Voir ~/.config/openbox/pipemenus.rc pour les options de configuration.
+'
+# Cherchez une option d'aide quelque part
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$HELP"
+        exit 0
+        ;;
+    esac
+done
+
+BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
+USR_CFG_DIR="$HOME/.config/openbox"
+
+KEY_URLS_GOOGLE=('https://dl-ssl.google.com/linux/linux_signing_key.pub')
+KEY_URLS_OPERA=('http://deb.opera.com/archive.key')
+
+declareDependencies wget
+
+if ! . "$BL_COMMON_LIBDIR/bl-include.cfg" 2> /dev/null; then
+    echo $"Error: Echec de la source bl-include.cfg in $BL_COMMON_LIBDIR" >&2
+    exit 1
+elif ! . "$USR_CFG_DIR/pipemenus.rc" 2> /dev/null; then
+    echo $"Error: Echec de la source pipemenus.rc in $USR_CFG_DIR" >&2
+    exit 1
+fi
+
+declare -A AppName AppStatus # AppName: Fractionnée sur des traits d'union, première lettre en majuscules
+for curApp in "${BROWSERS[@]}"; do
+    words=(${curApp//-/ })
+    AppName[$curApp]="${words[*]^}"
+    type "$curApp" >/dev/null 2>&1 && AppStatus[$curApp]=installed
+done
+
+appExists() {
+    for curApp in "${BROWSERS[@]}"; do # Si $packageName existe dans le tableau BROWSERS
+        [[ $curApp = "$1" ]] &&
+            return 0
+    done
+    say "Impossible d installer $1. Il n y a aucun navigateur que je connais." 1 >&2
+    say "Vous pouvez essayer ceux ci: ${BROWSERS[*]}" 2 >&2
+    return 1
+}
+
+addAptKey() {
+    clear
+    say 'Adding APT key...'
+    keyFile=$(mktemp)
+    gotKey=false
+    for curKey; do
+        wget -O "$keyFile" "$curKey" 2> /dev/null && {
+            gotKey=true
+            say 'Clé Téléchargée.'
+            break
+        } # Succès. Pas besoin d'essayer d autres keys
+        say "Impossible de récupérer la clé de $curKey . Essayer d autres sources..."
+    done
+    if ! $gotKey; then
+        say 'Impossible de récupérer APT key!' 3 >&2
+        return 1
+    fi
+    say 'Ajout de la clé'
+    sudo apt-key add "$keyFile"
+    rm -f "$keyFile"
+    return 0
+}
+
+# Si le package nécessite une configuration supplémentaire avant l'installation
+# créer une fonction appelée setupBrowserName, elle sera appelée automatiquement.
+
+setupGoogleChromeStable() {
+    addAptKey "${KEY_URLS_GOOGLE[@]}" || return 1
+    say 'Creation APT sources file...' 1
+    echo 'deb http://dl.google.com/linux/chrome/deb/ stable main' | sudo tee '/etc/apt/sources.list.d/google-chrome.list'
+}
+
+setupOpera() {
+    addAptKey "${KEY_URLS_OPERA[@]}" || return 1
+    say 'Creation APT sources file...' 1
+    echo 'deb http://deb.opera.com/opera/ stable non-free' | sudo tee '/etc/apt/sources.list.d/opera.list'
+}
+
+if [[ $1 = --install ]]; then
+    packageName=$2
+    appName=${AppName[$packageName]}
+    appExists "$packageName" || exit 1
+
+    terminalCheck -T "Install $appName" "$@"
+
+    desc="Ce script vas installer $appName browser."
+    setupFunctionName="setup${appName//[^a-zA-Z]/}" # setupFunctionName devrait maintenant être au format comme 'setupChromium'
+    [[ $packageName = firefox ]] && packageName='firefox-esr' # firefox in Debian Jessie
+    if [[ $(type -t "$setupFunctionName") = 'function' ]]; then
+        promptInstall --setup "$setupFunctionName" "$appName" "$desc" "$packageName"
+    else
+        promptInstall "$appName" "$desc" "$packageName"
+    fi
+
+elif [[ $1 ]]; then
+    echo "$0: Pas d'option $*" >&2
+    exit 1
+
+else # pipemenu
+    INSTALLED=false
+    menuStart
+
+    for curApp in "${BROWSERS[@]}"; do
+        if [[ ${AppStatus[$curApp]} = installed ]]; then
+            INSTALLED=true
+            menuItem "${AppName[$curApp]}" "$curApp"
+            [[ $curApp = *chrom* ]] && {
+                menuItem "${AppName[$curApp]} (Private Mode)" "$curApp --incognito" # Incognito mode pour chrome and chromium
+            }
+        fi
+    done
+    menu_started=false
+    for curApp in "${BROWSERS[@]}"; do
+        if [[ ${AppStatus[$curApp]} != installed ]]; then
+            [[ $curApp = google-chrome-stable && $(dpkg --print-architecture) != 'amd64' ]] && continue
+            $menu_started || menuSubmenu "browsers-install-submenu" "Install"
+            menu_started=true
+            menuItem "Install ${AppName[$curApp]}" "$0 --install $curApp"
+        fi
+    done
+    $menu_started && menuSubmenuEnd
+
+    if $INSTALLED ; then
+        menuSeparator
+        menuItem 'Selection du navigateur par Defaut' "x-terminal-emulator -T 'Select Default Browser' -e sh -c 'sudo update-alternatives --config x-www-browser; sleep 5'"
+    fi
+    menuEnd
+fi
+exit 0

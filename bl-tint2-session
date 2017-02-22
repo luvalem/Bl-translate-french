@@ -1,0 +1,79 @@
+#!/bin/bash
+#
+#    bl-tint2-session: Un script pour lire un fichier de session Tint2
+#     enregistré et démarrer la tint2s
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#    Traduis par Luvalem
+#
+#    Ce programme est un logiciel libre: vous pouvez le redistribuer
+#    et / ou le modifier selon les termes de la Licence Publique 
+#    Générale GNU publiée par la Free Software Foundation,
+#    soit la version 3 de la licence, soit (à votre choix)
+#    toute version ultérieure.
+#
+#    Ce programme est distribué dans l'espoir qu'il sera utile,
+#    Mais SANS AUCUNE GARANTIE; Sans même la garantie implicite de
+#    QUALITÉ MARCHANDE OU ADAPTATION À UN USAGE PARTICULIER.  Voir la
+#    GNU General Public License pour plus de détails.
+#
+#   Vous devriez avoir reçu une copie de la Licence Publique 
+#   Générale GNUavec ce programme.  Sinon, voir 
+#   <http://www.gnu.org/licenses/>.
+#
+########################################################################
+TINT2PATH="$HOME/.config/tint2"
+SESSIONFILE="$TINT2PATH/tint2-sessionfile"
+USAGE=$(
+    echo -e "\vUSAGE:  with no command argument, the script uses the chosen"
+    echo -e "\tTint2 session file \"$TINT2PATH/tint2-sessionfile\","
+    echo -e "\tif it exists, otherwise the default tint2rc is used"
+    echo -e "\v\tTo start them at login, add the following line to autostart:"
+    echo -e "\v\t\tbl-tint2-session"
+)
+
+findArgs(){     # Obtenir des arguments de commande
+    for arg in "$@";do
+        if [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
+            echo "$USAGE"
+            exit 0
+        else
+            echo -e "\tERROR: Désolé je ne comprends pas l'entrée"
+            echo "$USAGE"
+            exit 0
+        fi
+    done
+}
+
+testSessionfile(){
+    if test -f  "$1" &>/dev/null;then # Fichier de session trouvé
+        killTints
+        while read line;do
+            tint2 -c "$line" &
+            sleep 1s
+        done < "$1"
+    else
+        echo -e "Fichier de session créé \"$1\"\nRunning default tint2rc" 2>&1
+        echo "$TINT2PATH/tint2rc" > "$SESSIONFILE"
+        killTints
+        tint2 -c "$TINT2PATH/tint2rc" &
+    fi
+}
+
+killTints(){
+    pgrep -a tint2 | while read pid cmd; do
+        if [[ ${cmd%% *} = tint2 ]]; then
+            kill "$pid"
+        fi
+    done
+}
+
+if [ $# -eq 0 ];then    # Si aucun args, exécutez le fichier de session par défaut
+    testSessionfile "$SESSIONFILE"
+else
+    findArgs "$@"
+fi
+
+# Redémarrer compositor en cas de problèmes de rendu
+#bl-compositor --restart
+
+exit 0

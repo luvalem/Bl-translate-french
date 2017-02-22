@@ -1,0 +1,72 @@
+#!/bin/bash
+#    bl-printing-pipemenu an Openbox pipemenu for configuring printing
+#    Copyright (C) 2012 Philip Newborough   <corenominal@corenominal.org>
+#    Copyright (C) 2013 Aleks-Daniel Jakimenko
+#    Copyright (C) 2015 John Crawley    <john@bunsenlabs.org>
+#    Traduis par Luvalem
+#
+#    Ce programme est un logiciel libre: vous pouvez le redistribuer
+#    et / ou le modifier selon les termes de la Licence Publique 
+#    Générale GNU publiée par la Free Software Foundation,
+#    soit la version 3 de la licence, soit (à votre choix)
+#    toute version ultérieure.
+#
+#    Ce programme est distribué dans l'espoir qu'il sera utile,
+#    Mais SANS AUCUNE GARANTIE; Sans même la garantie implicite de
+#    QUALITÉ MARCHANDE OU ADAPTATION À UN USAGE PARTICULIER.  Voir la
+#    GNU General Public License pour plus de détails.
+#
+#   Vous devriez avoir reçu une copie de la Licence Publique 
+#   Générale GNUavec ce programme.  Sinon, voir 
+#   <http://www.gnu.org/licenses/>.
+
+HELP='    bl-printing-pipemenu un pipe menu Openbox pour configurer l impression
+    Il est normalement appelé par le menu Openbox.
+
+Options (Généralement passé du menu):
+    -h --help   Affiche ce message
+    --install   installe le support d impression
+
+    Si bl-printing-pipemenu est appelé sans options (la méthode usuelle),
+    il sortira un fichier openbox pipemenu xml
+    pour installer et configurer le support d impression.
+'
+# Cherchez une option d'aide quelque part
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$HELP"
+        exit 0
+        ;;
+    esac
+done
+
+BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
+
+if ! . "$BL_COMMON_LIBDIR/bl-include.cfg" 2> /dev/null; then
+    echo $"Error: Échec de la source bl-include.cfg in $BL_COMMON_LIBDIR" >&2
+    exit 1
+fi
+
+if [[ $1 = '--install' ]]; then
+
+    terminalCheck -T 'Installer le support d imprimante' --install
+
+    promptInstall 'PRINTING SUPPORT' 'Ce script installera le support d impression.' 'bunsen-meta-printer-support'
+
+elif [[ $1 ]]; then
+    echo "$0: Pas d option $*" >&2
+    exit 1
+
+else
+    # Pipemenu
+    menuStart
+    if type 'system-config-printer' &> /dev/null; then
+        menuItem 'Configurer Imprimantes' 'gksudo system-config-printer'
+    else
+        menuItem 'Installer Support Impression' "$0 --install"
+    fi
+    menuEnd
+fi
+exit 0

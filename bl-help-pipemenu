@@ -1,0 +1,114 @@
+#!/bin/bash
+#    bl-help-pipemenu - Un pipemenu Openbox pour afficher
+#    des fichiers d'aide. 
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#
+#    Ce programme est un logiciel libre: vous pouvez le redistribuer
+#    et / ou le modifier selon les termes de la Licence Publique 
+#    Générale GNU publiée par la Free Software Foundation,
+#    soit la version 3 de la licence, soit (à votre choix)
+#    toute version ultérieure.
+#
+#    Ce programme est distribué dans l'espoir qu'il sera utile,
+#    Mais SANS AUCUNE GARANTIE; Sans même la garantie implicite de
+#    QUALITÉ MARCHANDE OU ADAPTATION À UN USAGE PARTICULIER.  Voir la
+#    GNU General Public License pour plus de détails.
+#
+#   Vous devriez avoir reçu une copie de la Licence Publique 
+#   Générale GNUavec ce programme.  Sinon, voir 
+#   <http://www.gnu.org/licenses/>.
+
+HELP='    bl-help-pipemenu un pipemenu Openbox pour afficher les 
+fichiers d aide
+    Il est normalement appele par Openbox Menu.
+
+Options (generalement hors du menu):
+    -h --help   affiche ce message
+
+    Si bl-help-pipemenu est appele sans option (la methode usuelle),
+    il sort un fichier xml openbox pipemenu affichant divers fichier
+    d aide, en ligne et sur le système.
+'
+# Chercher une option d'aide quelque part
+for i in "$@"
+do
+    case "$i" in
+    -h|--help)
+        echo "$HELP"
+        exit 0
+        ;;
+    esac
+done
+
+BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
+
+if ! . "$BL_COMMON_LIBDIR/bl-include.cfg" 2> /dev/null; then
+    echo $"Error: Echec de la source bl-include.cfg dans $BL_COMMON_LIBDIR" >&2
+    exit 1
+fi
+
+menuStart
+menuSeparator 'Aide Web'
+menuSeparator
+menuItem 'Forum d aide & support' 'x-www-browser "https://forums.bunsenlabs.org/viewforum.php?id=2"'
+menuItem 'Scripts, Tutoriels & Conseils' 'x-www-browser "https://forums.bunsenlabs.org/viewforum.php?id=9"'
+menuSubmenu 'DebianWWW' 'Debian'
+menuItem 'Debian Documentation' 'x-www-browser "https://www.debian.org/doc/index.fr.html"'
+menuItem 'Debian Cahier Administrateur' 'x-www-browser "https://debian-handbook.info/browse/fr-FR/stable/"'
+menuItem 'Debian Reference' 'x-www-browser "https://www.debian.org/doc/manuals/debian-reference/index.fr.html"'
+menuItem 'Wiki' 'x-www-browser "https://wiki.debian.org/fr/FrontPage"'
+menuItem 'Forum' 'x-www-browser "https://www.debian-fr.org/"'
+menuItem 'Recherche Package' 'x-www-browser "https://www.debian.org/distrib/packages.fr.html"'
+menuItem 'Package Tracker' 'x-www-browser "https://tracker.debian.org/"'
+menuItem 'Security Tracker' 'x-www-browser "https://security-tracker.debian.org/tracker/"'
+menuSubmenuEnd
+menuItem 'Arch Wiki' 'x-www-browser "https://wiki.archlinux.fr/"'
+
+menuSeparator
+
+menuSubmenu 'OpenboxWWW' 'Openbox'
+menuSubmenu 'ObWWW' 'Openbox Website'
+menuItem 'Openbox Homepage' 'x-www-browser "http://openbox.org/"'
+menuItem 'Openbox Getting Started' 'x-www-browser "http://openbox.org/wiki/Help:Getting_started"'
+menuItem 'Openbox Documentation' 'x-www-browser "http://openbox.org/wiki/Help:Contents"'
+menuItem 'Openbox FAQs' 'x-www-browser "http://openbox.org/wiki/Help:FAQ"'
+menuSubmenuEnd
+menuItem 'ArchWiki Guide Openbox' 'x-www-browser "https://wiki.archlinux.fr/Openbox"'
+menuItem 'Debian Wiki Guide Openbox' 'x-www-browser "https://wiki.debian.org/fr/Openbox"'
+menuItem 'Phollow Guide Openbox' 'x-www-browser "https://phollow.fr/2009/01/openbox-le-guide/"'
+menuSubmenuEnd
+
+menuSubmenu 'Tint2WWW' 'Tint2'
+menuItem 'Tint2 Wiki: FAQ' 'x-www-browser "https://gitlab.com/o9000/tint2/wikis/FAQ"'
+menuItem 'Tint2 Wiki: Configuration' 'x-www-browser "https://gitlab.com/o9000/tint2/blob/master/doc/tint2.md"'
+menuItem 'Tint2 Forum Thread' 'x-www-browser "https://forums.bunsenlabs.org/viewtopic.php?id=254"'
+menuItem 'Tint2 man page' 'x-terminal-emulator -T "Tint2 man page" -e man tint2'
+menuSubmenuEnd
+
+menuSubmenu 'ConkyWWW' 'Conky'
+menuItem 'Conky Wiki' 'x-www-browser "https://github.com/brndnmtthws/conky/wiki"'
+menuItem 'Conky Archive' 'x-www-browser "http://crunchbang.org/forums/viewtopic.php?pid=371424"'
+menuItem 'Conky man pages' 'x-terminal-emulator -T "Conky man page" -e man conky'
+menuSubmenuEnd
+menuSeparator
+
+menuSubmenu 'ThemesWWW' 'Theme Sites Telechargements'
+menuItem 'Bunsenlabs on DeviantArt' 'x-www-browser "http://bunsenlabs.deviantart.com/"'
+menuItem 'Box-Look.org' 'x-www-browser "http://www.box-look.org"'
+menuItem 'gnome-look.org' 'x-www-browser "http://gnome-look.org/"'
+menuSubmenuEnd
+menuSeparator
+menuSeparator 'man pages'
+menuItem 'Compositor' 'x-terminal-emulator -T "Compositor man page" -e man compton'
+menuItem 'dmenu' 'x-terminal-emulator -T "dmenu man page" -e man dmenu'
+menuItem 'gmrun' 'x-terminal-emulator -T "gmrun man page" -e man gmrun'
+menuItem 'xrandr' 'x-terminal-emulator -T "xrandr man page" -e man xrandr'
+
+menuSeparator
+menuSubmenu 'BLhelp' 'Fichier d Aide Bunsen'
+menuItem 'Comment Editer Menu' 'yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="How to Edit the Menu" --filename="/usr/share/bunsen/docs/aide-fichier-menu.txt" --width=900 --height=700 --fontname=Monospace'
+menuItem 'A Propos des Alternatives Bunsen ' 'yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="About Bunsen Alternatives" --filename="/usr/share/bunsen/docs/fichier-aide-bl-alternatives.txt" --width=900 --height=700 --fontname=Monospace'
+menuItem 'Aide Conkyzen' 'yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="Conkyzen Help" --filename="/usr/share/bunsen/docs/fichier-aide-conkyzen.txt" --width=900 --height=700 --fontname=Monospace'
+menuSubmenuEnd
+
+menuEnd
