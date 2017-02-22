@@ -1,0 +1,78 @@
+BunsenLabs Conky Manager scripts
+================================
+
+Une "session" est un groupe de conkys qui peuvent être exécutés ensemble: 
+Les commandes pour les démarrer sont enregistrées dans un fichier de session enregistrée.
+Le menu a une option pour faire une nouvelle session conky,Et le chemin d'accès
+du fichier pour la nouvelle session est saisi dans une boîte de dialogue d'entrée de texte gui.
+
+Tous les conkys trouvés sont affichés dans une boîte de dialogue de dialogue yad,
+et l'exécution de conkys sont cochées. Entrez "OK" et tous les conkys sont tués,
+et celles choisies sont démarrées, et les commandes sont enregistrées dans le fichier
+de session par défaut.
+
+Il existe des options de menu pour modifier les fichiers de configuration conky:
+Choisir parmi tous les conkys, les conkys en cours d'exécution, ou simplement le conky par défaut.
+Plusieurs conkys peuvent être ouverts pour l'édition en même temps.
+
+
+bl-conkyzen
+===========
+Le script principal
+
+USAGE:  bl-conkyzen [OPTION]...FILES
+
+    Sans option de commande, le script exécute le gui
+
+    -h,--help  : Aide.
+    -f,--file  : FILEPATH : Spécifier le fichier pour enregistrer la session.
+    -z	       : Exécuter la boîte de dialogue d'entrée de fichier gui
+                 pour la nouvelle session enregistrée.
+
+   Lorsque la boîte de dialogue s'ouvre, tous les conkys en cours d'exécution seront cochés.
+    Cliquez sur OK et tous les conkys en cours d'exécution sont arrêtés et
+    tous les conkys cochés sont lancés.
+
+    Pour arrêter un conky juste décocher, et "OK"
+
+EXEMPLES:
+    Enregistrer la session dans un nouveau fichier de session enregistrée avec:
+
+        bl-conkyzen -f sessionfile-name
+
+    Pour démarrer la session conky par défaut lors de la connexion, 
+    ajoutez la ligne suivante a autostart:
+
+        (sleep 2s && bl-conky-session --autostart) &
+        
+        
+bl-conky-session
+================
+Script pour gérer les fichiers session
+
+USAGE:  bl-conky-session [OPTION(S)]...FILES
+
+    Sans argument de commande, le script utilise la valeur par défaut
+    "$CONKYPATH/conky-session" sessionfile
+
+OPTIONS:
+    --default   : Spécifier le fichier session par défaut
+    --autostart : Aucune option "kill conky" demandée
+     Chemin / vers / sessionfile1 / chemin / vers / sessionfile2 etc
+
+EXEMPLES:
+    Exécuter le fichier session spécifié lors de la connexion:
+    "bl-conky-session --autostart /path/to/sessionfile"
+
+    Exécute le fichier session par défaut, sans tuer les conkys en cours d'exécution:
+    "bl-conky-session --autostart"
+
+    Exécutez plusieurs fichiers de session conky (option de kill conkys en premier):
+    "bl-conky-session --default sessionfile1 sessionfile2 etc"
+    
+    
+bl-conkyedit
+============
+Script pour afficher une liste avec tous les conkys disponibles pour l'édition.
+Les fichiers conky config choisis seront ouverts dans l'éditeur de texte par défaut.
+

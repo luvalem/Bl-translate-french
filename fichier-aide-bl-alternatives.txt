@@ -1,0 +1,73 @@
+"Alternatives Bunsen"
+=====================
+Les «Alternatives Bunsen» sont quatre groupes ajoutés aux Alternatives Debian:
+
+        bl-file-manager
+        bl-text-editor
+        bl-image-viewer
+        bl-media-player
+
+Ils peuvent être utilisés dans les menus, les raccourcis clavier,
+les fichiers de configuration et les scripts comme n'importe quelle autre commande,
+et appellera quelle application a été fixée comme cette alternative.
+Souvent, le réglage se fait automatiquement, mais même fait manuellement,
+il ne doit être fait qu'une seule fois pour couvrir tous les appels à cette commande.
+(Voir «Modification des solutions de rechange» ci-dessous.)
+
+Les paramètres par défaut dans une nouvelle installation de BunsenLabs sont les suivants:
+
+        bl-file-manager Thunar
+        bl-text-editor  Geany
+        bl-image-viewer Mirage
+        bl-media-player VLC
+
+La seule différence par rapport aux autres alternatives Debian est qu'elles
+ne sont pas automatiquement ajoutées par les packages eux-mêmes.
+Par exemple, lorsque xfce4-terminal est installé, il s'ajoute aux options
+disponibles pour x-terminal-emulator. Cependant, même si pcmanfm est une alternative
+possible pour bl-file-manager, le paquet pcmanfm ne s'ajoutera pas à ce groupe de solutions
+alternatives. Ce travail est fait par le script bl-alternatives qui est appelé automatiquement
+par dpkg après chaque installation de paquet.
+(Il est très rapide et ne ralentit pas significativement l'installation.)
+
+Les applications qui peuvent être ajoutées par bl-alternatives sont:
+        bl-file-manager: thunar caja nautilus pcmanfm spacefm xfe
+        bl-text-editor: geany emacs gedit jedit kate leafpad medit mousepad scite
+        bl-image-viewer: mirage eog eom gpicview viewnior
+        bl-media-player: vlc banshee dragonplayer gnome-mplayer gxine kaffeine parole smplayer totem
+
+Note: gvim est également une option pour bl-text-editor, mais est manipulé spécialement 
+(wrapper et les noms de page man diffèrent).
+
+Vous pouvez les modifier en éditant / usr / bin / bl-alternatives,
+Ou ajouter une application à un autre groupe manuellement (voir ci-dessous).
+
+Modification des options
+=========================
+Vous pouvez éditer toutes les variantes Debian (y compris les variétés bl- * BunsenLabs)
+Avec la commande 'update-alternatives' (voir 'man update-alternatives'), 
+Mais il ya aussi une face avant graphique appelé Galternatives qui
+est plus facile à utiliser de certaines façons..
+
+In the BunsenLabs menu, click "System" > "Edit Debian Alternatives".
+Vous pouvez faire défiler la liste pour voir quels autres groupes ont été installés
+sur votre système, quelles options sont disponibles pour chaque groupe
+et s'il existe plus d'une option, vous pouvez en définir une autre.
+
+Vous pouvez également ajouter une nouvelle application à un groupe de remplacement existant,
+Si le script bl-alternatives n'a pas pu ajouter votre visualiseur d'image préféré
+à bl-image-viewer, vous pouvez l'ajouter manuellement ici.
+
+Il n'est pas possible de supprimer un groupe entier avec des galternatives,
+mais vous pouvez supprimer une option individuelle d'un groupe.
+
+REMARQUE: Ces paramètres sont à l'échelle du système, affectant tous les utilisateurs.
+Si vous voulez une version locale de bl-file-manager définie par exemple pour spacefm,
+tout en laissant le réglage du système inchangé, Puis mettez un lien symbolique
+appelé 'bl-file-manager' dans ~ / bin qui pointe vers / usr / bin / spacefm.
+Si ~ / bin est dans votre $ PATH et vient avant / usr / bin, votre lien symbolique
+remplacera le système bl-file-manager.
+
+Voir 'man update-alternatives' pour plus de détails sur les Alternatives Debian.
+Ou Ici:
+https://www.debian-administration.org/article/91/Using_the_Debian_alternatives_system

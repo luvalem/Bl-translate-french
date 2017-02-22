@@ -1,0 +1,64 @@
+Comment editer le menu Openbox
+==============================
+
+*********  Il est fortement recommandé de faire une sauvegarde en premier!  *************
+
+Le menu Openbox ne se met pas automatiquement à jour, il doit être modifié par l'utilisateur.
+
+Soit éditer "~/.config/openbox/menu.xml" À l'aide d'un éditeur de texte
+ou utilisez le gui obconf:
+
+    Menu -> Settings -> Openbox -> GUI Menu Editor
+    
+(Vous trouverez des liens vers des informations plus détaillées
+  dans l'aide en ligne de Openbox dans le menu Aide)
+
+
+Comment éditer un pipemenu BunsenLabs
+=====================================
+
+1)  Pour les pipemenus graphiques, multimédia et navigateurs:
+
+    Modifiez le fichier de configuration pipemenu, qui est "~/.config/openbox/pipemenus.rc"
+
+    Ajouter / supprimer l'application que vous voulez.
+    (NB il doit y avoir un espace entre chaque élément).
+    Le nom de l'application est identique au nom du package.
+
+    Par exemple, modifiez les entrées dans le menu "Graphiques" en éditant la ligne:
+
+        GRAPHICS_APPS=( 'mirage' 'gimp' 'blender' 'inkscape' 'mandelbulber' 'viewnior')
+
+Ou
+
+2)  D'autres menus, p.ex. bl-help-pipemenu, sont dans "/ usr / bin /"
+
+ *** N'oubliez pas qu'ils pourraient être sur-écrits par une mise à niveau BL package, 
+	 alors utilisez la méthode suivante au lieu d'éditer le fichier en tant que root ***
+ 
+	1) Copiez le fichier de / usr / bin vers ~ / bin (Créer le répertoire si nécessaire).
+	2) Vérifiez ~ / bin est en premier dans $ PATH (Utilisez 'echo $ PATH' pour vérifier)
+	3) Modifier le fichier local
+
+	Ils ont des entrées de menu comme:
+
+        menuItem 'Forum Basic Help & Support' 'x-www-browser "https://forums.bunsenlabs.org/viewforum.php?id=2"'
+        
+    Le premier élément est l'étiquette, le second est la commande à exécuter
+    
+Recent Files Pipemenu
+=====================
+
+Exécutez "bl-recent-files-pipemenu -h" pour afficher l'utilisation de la commande.
+
+Pour modifier la façon dont le menu affiche les fichiers récents,
+vous pouvez ajouter les commutateurs suivants à l'entrée menu.xml pipemenu:
+
+	-r, --reverse    Mettez les articles les plus récemment utilisés en haut du menu
+	-l, --limit  NUM     Inclure jusqu'à NUM éléments dans le menu
+
+Donc, pour avoir les plus récents 20 articles affichés, avec le plus récent d'abord, utilisez:
+
+	<menu execute="bl-recent-files-pipemenu -r -l 20" id="pipe-recentfilesmenu" label="Recent Files"/>
+
+
