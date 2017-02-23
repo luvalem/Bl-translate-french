@@ -1,0 +1,149 @@
+#!/bin/bash
+# Script de Post Installation
+
+set -o nounset # N'accepte pas de variables non définies
+
+TEXTDOMAIN=bl-welcome
+
+BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
+BL_WELCOME_LIBDIR='/usr/lib/bunsen/welcome'
+
+if ! . "$BL_COMMON_LIBDIR/bl-include.cfg" 2> /dev/null; then
+    echo $"Error: Échec de la source bl-include.cfg in $BL_COMMON_LIBDIR" >&2
+    exit 1
+fi
+
+# url par defaut pour avoir les backports Debian  etc.
+default_mirror='http://httpredir.debian.org/debian'
+
+# Correspond à la plupart des miroirs
+# ajouter (?=.*debian) au début pour insister sur 'debian' (nécessite PCRE)
+mirror_regex='(http|ftp)://([[:alnum:]_-]+\.)+[[:alnum:]]+(/[[:alnum:]._-]+)*/?'
+
+log_dir="$HOME/.cache/bunsen-welcome"
+mkdir -p "$log_dir"
+logfile="$log_dir"/bl-welcome.log
+
+log() {
+    echo "
+${1-}
+" >> "$logfile"
+}
+
+warnlog() {
+    echo "######## WARNING ########
+${1-}
+------------------------------------------------" >> "$logfile"
+}
+
+STEPS_BASIC=('check-repos' 'apt-update' 'apt-upgrade' 'system-tweaks' 'deuterium-tweaks' 'install-images-extra' 'install-java-packages' 'add-debian-backports' 'add-bunsen-backports' 'install-flashplugin' 'devel')
+STEPS_DEVEL=('devel-install-version-control-tools' 'devel-install-lamp-stack' 'devel-install-packaging-tools')
+
+# Imprime quelque chose comme: -------[ page 1 of 10 ]-------
+header() {
+    local width=$(tput cols 2>/dev/tty)
+    local headerLength=$((width - 8)) # 8 is for '[  ]' and 2 spaces margins
+    local headerText=$(printf $"page %d of %d" "$STEP" "$STEPS")
+    local dashesStart=$( printf "%$(( (headerLength - ${#headerText}) / 2 ))s" )
+    local dashesEnd=$( printf "%$(( (headerLength - ${#headerText}) / 2 + (headerLength - ${#headerText}) % 2 ))s" )
+    echo "  ${dashesStart// /-}[ ${headerText} ]${dashesEnd// /-}"$'\n'
+}
+
+# Utilisation: setupPage titre texte [prompt [prompt-extra-arg]]
+# Omettre l'invite pour la page non interactive.
+setupPage() {
+    sleep 1
+    tput clear
+    header
+    say "${1^^}
+${1//?/-}
+
+$2
+"
+    [[ ${3-} ]] || { sleep 1;return 0;}
+    prompt "  $3" "${4:-}"
+    return $?
+}
+
+# Fonction courante pour la plupart des scripts d'installation. Utilisez ceci à moins que vous ne puissiez vraiment pas.
+# Usage: installPage title text package...
+# example: installPage 'LibreOffice suite' 'This will install libreoffice' 'libreoffice'
+installPage() {
+    local title=$"install"" $1"
+    local text="$1 has already been installed."
+    allInstalled "${@:3}" && {
+        setupPage "$title" "$text"
+        return 0
+    }
+    text="$2"$'\n\n'$"Si vous choisissez de le faire, les paquets suivants seront installés:""
+
+    ${*:3}
+
+"$"Note: Les paquetages supplémentaires répertoriés comme dépendances seront également installés."
+
+    local prompt=$"Voulez vous installer"" ${1}?"
+
+    if setupPage "$title" "$text" "$prompt" 'N'
+    then
+        if safeInstall "${@:3}"
+        then
+            return 0
+        else
+            say '...Aller à la page suivante.' 1
+        fi
+    fi
+    return 1
+}
+
+[[ -d /lib/live ]] && exit 0
+
+if [[ ${1-} = '--firstrun' ]]; then # First run, from autostart
+    [[ -e $HOME/.config/bunsen/bl-welcome ]] && exit 0
+fi
+
+terminalCheck -T 'Bienvenue!'
+
+exec > >( tee -a "$logfile" ) 2>&1
+
+log "Démarrage de bl-welcome pour $USER at $(date)"
+
+createFlag 'bl-welcome'
+
+if [[ $( id -u ) -eq 0 ]]; then
+    echo $"Error: Ce script ne doit pas être exécuté directement en root." >&2
+    exit 1
+fi
+
+# Run through steps
+STEP=1
+if [[ -e $HOME/.config/bunsen/bl-welcome-understood ]]; then
+    (( STEPS = ${#STEPS_BASIC[@]} + ${#STEPS_DEVEL[@]} + 2 )) # 2 is intro and fini
+    . "$BL_WELCOME_LIBDIR/intro"
+else
+    (( STEPS = ${#STEPS_BASIC[@]} + ${#STEPS_DEVEL[@]} + 3 )) # 3 is intro, warning and fini
+    . "$BL_WELCOME_LIBDIR/intro"
+    ((STEP++))
+    . "$BL_WELCOME_LIBDIR/warning"
+    createFlag 'bl-welcome-understood'
+fi
+sleep 2
+tput clear
+connectiontest
+
+DEVEL=false
+
+for curStep in "${STEPS_BASIC[@]}"; do
+    ((STEP++))
+    . "$BL_WELCOME_LIBDIR/$curStep"
+done
+
+if $DEVEL; then
+    for curStep in "${STEPS_DEVEL[@]}"; do
+        ((STEP++))
+        . "$BL_WELCOME_LIBDIR/$curStep"
+    done
+fi
+STEP=$STEPS
+. "$BL_WELCOME_LIBDIR/fini"
+
+exit 0
