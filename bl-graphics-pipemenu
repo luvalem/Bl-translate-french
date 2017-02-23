@@ -29,7 +29,8 @@ HELP='    bl-graphics-pipemenu un pipemenu openbox pour applications graphiques
 Options (Généralement passé du menu):
     -h --help   Afficher ce message
     --install   Installer un package graphique
-    (Le paquet doit être dans la liste définie dans le fichier de configuration pipemenu)
+ (Le paquet doit être dans la liste définie dans le fichier 
+    de configuration pipemenu)
 
     Si bl-graphics-pipemenu est appelé sans options (La méthode habituelle),
     il sortira un fichier openbox pipemenu xml
@@ -81,7 +82,7 @@ appExists() {
         [[ $curApp = "$1" ]] &&
             return 0
     done
-    say "Unable to install $1. Il n existe pas de telle application que je connaisse." 1 >&2
+    say "Impossible d'installer $1. Il n existe pas de telle application que je connaisse." 1 >&2
     say "Vous pouvez essayer une de celles ci: ${GRAPHICS_APPS[*]}" 2 >&2
     return 1
 }
@@ -91,7 +92,7 @@ screenshooterExists() {
         [[ $curScrot = "$1" ]] &&
             return 0
     done
-    say "Impossible d installer $1. Il n existe pas de telle application que je connaisse." 1 >&2
+    say "Impossible d'installer $1. Il n existe pas de telle application que je connaisse." 1 >&2
     say "Vous pouvez essayer une de celles ci: ${GRAPHICS_SCROTS[*]}" 2 >&2
     return 1
 }
@@ -143,7 +144,7 @@ if [[ $1 = --install ]]; then
     fi
 
 elif [[ $1 ]]; then
-    echo "$0: pas d option $*" >&2
+    echo "$0: pas d'option $*" >&2
     exit 1
 
 else # pipemenu
@@ -163,7 +164,7 @@ else # pipemenu
     done
     $menu_started && menuSubmenuEnd
 
-    menuSeparator 'Capture Ecran'
+    menuSeparator 'Capture d`Ecran'
 
     for curScrot in "${GRAPHICS_SCROTS[@]}"; do
         if [[ ${AppStatus[$curScrot]} = installed ]]; then

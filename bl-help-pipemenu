@@ -2,6 +2,7 @@
 #    bl-help-pipemenu - Un pipemenu Openbox pour afficher
 #    des fichiers d'aide. 
 #    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#    Traduis par Luvalem
 #
 #    Ce programme est un logiciel libre: vous pouvez le redistribuer
 #    et / ou le modifier selon les termes de la Licence Publique 
@@ -18,16 +19,15 @@
 #   Générale GNUavec ce programme.  Sinon, voir 
 #   <http://www.gnu.org/licenses/>.
 
-HELP='    bl-help-pipemenu un pipemenu Openbox pour afficher les 
-fichiers d aide
-    Il est normalement appele par Openbox Menu.
+HELP='    bl-help-pipemenu un pipemenu Openbox pour afficher les fichiers d`aide
+    Il est normalement appelé par Openbox Menu.
 
-Options (generalement hors du menu):
+Options (généralement hors du menu):
     -h --help   affiche ce message
 
-    Si bl-help-pipemenu est appele sans option (la methode usuelle),
-    il sort un fichier xml openbox pipemenu affichant divers fichier
-    d aide, en ligne et sur le système.
+    Si bl-help-pipemenu est appelé sans option (la methode usuelle),
+    il sort un fichier openbox pipemenu xml affichant divers fichier
+    d`aide, en ligne et sur le système.
 '
 # Chercher une option d'aide quelque part
 for i in "$@"
@@ -43,19 +43,19 @@ done
 BL_COMMON_LIBDIR='/usr/lib/bunsen/common'
 
 if ! . "$BL_COMMON_LIBDIR/bl-include.cfg" 2> /dev/null; then
-    echo $"Error: Echec de la source bl-include.cfg dans $BL_COMMON_LIBDIR" >&2
+    echo $"Erreur: Echec de la source bl-include.cfg dans $BL_COMMON_LIBDIR" >&2
     exit 1
 fi
 
 menuStart
 menuSeparator 'Aide Web'
 menuSeparator
-menuItem 'Forum d aide & support' 'x-www-browser "https://forums.bunsenlabs.org/viewforum.php?id=2"'
+menuItem 'Forum d`aide & support' 'x-www-browser "https://forums.bunsenlabs.org/viewforum.php?id=2"'
 menuItem 'Scripts, Tutoriels & Conseils' 'x-www-browser "https://forums.bunsenlabs.org/viewforum.php?id=9"'
 menuSubmenu 'DebianWWW' 'Debian'
 menuItem 'Debian Documentation' 'x-www-browser "https://www.debian.org/doc/index.fr.html"'
 menuItem 'Debian Cahier Administrateur' 'x-www-browser "https://debian-handbook.info/browse/fr-FR/stable/"'
-menuItem 'Debian Reference' 'x-www-browser "https://www.debian.org/doc/manuals/debian-reference/index.fr.html"'
+menuItem 'Debian Réfèrence' 'x-www-browser "https://www.debian.org/doc/manuals/debian-reference/index.fr.html"'
 menuItem 'Wiki' 'x-www-browser "https://wiki.debian.org/fr/FrontPage"'
 menuItem 'Forum' 'x-www-browser "https://www.debian-fr.org/"'
 menuItem 'Recherche Package' 'x-www-browser "https://www.debian.org/distrib/packages.fr.html"'
@@ -92,7 +92,7 @@ menuItem 'Conky man pages' 'x-terminal-emulator -T "Conky man page" -e man conky
 menuSubmenuEnd
 menuSeparator
 
-menuSubmenu 'ThemesWWW' 'Theme Sites Telechargements'
+menuSubmenu 'ThemesWWW' 'Thèmes Sites Téléchargements'
 menuItem 'Bunsenlabs on DeviantArt' 'x-www-browser "http://bunsenlabs.deviantart.com/"'
 menuItem 'Box-Look.org' 'x-www-browser "http://www.box-look.org"'
 menuItem 'gnome-look.org' 'x-www-browser "http://gnome-look.org/"'
@@ -105,7 +105,7 @@ menuItem 'gmrun' 'x-terminal-emulator -T "gmrun man page" -e man gmrun'
 menuItem 'xrandr' 'x-terminal-emulator -T "xrandr man page" -e man xrandr'
 
 menuSeparator
-menuSubmenu 'BLhelp' 'Fichier d Aide Bunsen'
+menuSubmenu 'BLhelp' 'Fichier d`Aide Bunsen'
 menuItem 'Comment Editer Menu' 'yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="How to Edit the Menu" --filename="/usr/share/bunsen/docs/aide-fichier-menu.txt" --width=900 --height=700 --fontname=Monospace'
 menuItem 'A Propos des Alternatives Bunsen ' 'yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="About Bunsen Alternatives" --filename="/usr/share/bunsen/docs/fichier-aide-bl-alternatives.txt" --width=900 --height=700 --fontname=Monospace'
 menuItem 'Aide Conkyzen' 'yad --button="OK":0 --center --window-icon=distributor-logo-bunsenlabs --text-info --title="Conkyzen Help" --filename="/usr/share/bunsen/docs/fichier-aide-conkyzen.txt" --width=900 --height=700 --fontname=Monospace'

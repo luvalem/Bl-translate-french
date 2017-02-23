@@ -17,14 +17,14 @@
 #   Générale GNUavec ce programme.  Sinon, voir 
 #   <http://www.gnu.org/licenses/>.
 
-HELP='    bl-conky-pipemenu Un pipemenu Openbox pourutiliser conky
-    Il est generalement appelé par openbox menu.
+HELP='    bl-conky-pipemenu Un pipemenu Openbox pour utiliser conky
+    Il est généralement appelé par openbox menu.
 
 Options:
     -h --help   Affiche ce message
 
     Si bl-conky-pipemenu est appelé sans options (Methode usuelle),
-    Il produira un fichier xml openbox pipemenu pour la manipulation 
+    Il produira un fichier openbox pipemenu xml pour la manipulation 
     des sessions conky.
 
 voir /usr/share/bunsen/docs/fichier-aide-conkyzen.txt and "man conky"
@@ -60,7 +60,7 @@ if [ ! -e "$CSESSIONFILE" ] 2> /dev/null ; then
     echo "conky -c $HOME/.conkyrc & sleep 1" > "$CSESSIONFILE"
 fi
 if [ ! -e "$SESSIONS" ] 2> /dev/null ; then
-    echo "$0: Impossible de trouver une session sauvegardee dans $CONKYPATH" >&2
+    echo "$0: Impossible de trouver une session sauvegardée dans $CONKYPATH" >&2
 fi
 
 declareDependencies yad
@@ -74,7 +74,7 @@ getSessions(){  # read any saved sessions from save-sessions file
             menuItem "$session" "$CSESSION $session"
         done < "$SESSIONS"
     else
-        echo "$0: Impossible de trouver une session sauvegardee dans $CONKYPATH" >&2
+        echo "$0: Impossible de trouver une session sauvegardée dans $CONKYPATH" >&2
     fi
 }
 
@@ -98,7 +98,7 @@ loadReloadMenu(){
 
 loadSavedsessionSubmenu(){
     if type "$CSESSION" &>/dev/null;then  # bl-conky-session script found
-        menuSubmenu "Sessions" "Sessions Sauvegardees"
+        menuSubmenu "Sessions" "Sessions Sauvegardées"
         getSessions
         menuSubmenuEnd
     fi

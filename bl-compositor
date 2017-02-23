@@ -25,15 +25,15 @@ HELP='    bl-compositor est un Pipe Menu Openbox pour utiliser compton composito
 
 Options (usually passed from the menu):
     -h --help   Affiche ce message
-    --start     demarre compositor and relance tint2, si Actif
+    --start     démarre compositor and relance tint2, si Actif
     --restart   relance compositor, si Actif, et relance tint2
     --stop      stop compositor
     --edit      ouvre le fichier de configuration compton dans un éditeur de texte
-    --watch     redemarre compositor chaque fois que le fichier de configuration est modifié
+    --watch     redémarre compositor chaque fois que le fichier de configuration est modifié
     (--Watch est utile pour le débogage)
 
-    If bl-compositor est appelé sans options (la methode habituelle),
-    il sortira un fichier openbox pipemenu xml pour modifier l effet composite.
+    Si bl-compositor est appelé sans options (la methode habituelle),
+    il sortira un fichier openbox pipemenu xml pour modifier l`effet composite.
 
 voir ~/.config/compton.conf et "man compton" pour les options de configuration.
 '
@@ -61,7 +61,7 @@ declareDependencies compton
 
 # ------------- Set compton command options -----------------------------------
 EXECXCOMP='compton -b'
-if glxinfo | egrep -iq 'direct rendering: yes'; then
+if glxinfo | egrep -iq 'rendu direct: oui'; then
     EXECXCOMP+=' --vsync opengl'
 fi
 
@@ -114,8 +114,8 @@ else
     if ! pidof compton > /dev/null; then
         menuItem 'Activer Composite' "$0 --start"
     else
-        menuItem 'Redemarer Composite' "$0 --restart"
-        menuItem 'Desactiver Composite' "$0 --stop"
+        menuItem 'Redémmarer Composite' "$0 --restart"
+        menuItem 'Désactiver Composite' "$0 --stop"
         menuSeparator
     fi
     menuItem 'Editer config Composite' "$0 --edit"
