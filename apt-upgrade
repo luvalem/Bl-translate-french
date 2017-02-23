@@ -1,0 +1,24 @@
+UPGRADE_TITLE=$"Mettre à niveau les paquets installés"
+UPGRADE_TEXT=$"Nous devons maintenant mettre à niveau les paquets installés sur votre système."' '$"Si vous choisissez d'accepter, ce script executera la commande:"'
+
+    sudo apt-get upgrade --with-new-pkgs'
+UPGRADE_PROMPT=$"Voulez vous mettre à niveau vos paquets maintenant?"
+
+if setupPage "$UPGRADE_TITLE" "$UPGRADE_TEXT" "$UPGRADE_PROMPT"; then
+    bw_version=$(checkVersion 'bunsen-welcome')
+    log "Current version of bunsen-welcome: $bw_version"
+    safeUpgrade --with-new-pkgs
+    bw_new_version=$(checkVersion 'bunsen-welcome')
+    [[ $bw_new_version != $bw_version ]] && {
+        log "bunsen-welcome: upgraded to $bw_new_version"
+        say "Le paquet 'bunsen-welcome' est mis à niveau.
+Ce script a peut être changé, il sera donc redémarré.
+Patientez SVP..." 6
+        exec >/dev/tty 2>&1 # so terminalCheck() doesn't open a new terminal
+        exec "$0"
+    }
+else
+    say 'Il était nécessaire de mettre à niveau afin de continuer le script.
+Exiting...' 2
+    exit 0
+fi
