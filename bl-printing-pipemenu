@@ -1,5 +1,5 @@
 #!/bin/bash
-#    bl-printing-pipemenu an Openbox pipemenu for configuring printing
+#    bl-printing-pipemenu an Openbox pipemenu for configuring printing old
 #    Copyright (C) 2012 Philip Newborough   <corenominal@corenominal.org>
 #    Copyright (C) 2013 Aleks-Daniel Jakimenko
 #    Copyright (C) 2015 John Crawley    <john@bunsenlabs.org>
