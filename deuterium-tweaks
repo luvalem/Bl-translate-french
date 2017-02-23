@@ -1,0 +1,136 @@
+setupPage $"Deuterium tweaks" $"Vérification de votre système pour d autres améliorations possibles..."
+
+# autostart and autostart_bkp already set in previous "system-tweaks" page
+
+ref_autostart='/usr/share/bunsen/skel/.config/openbox/autostart'
+
+## replace_block oldblock newblock filepath [reference-file]
+replace_block(){
+    local oldblock="$1"
+    local newblock="$2"
+    local filepath="$3"
+    local ref_file="${4-}"
+    for i in "$filepath" "$ref_file"
+    do
+        [[ -f $i ]] || errorExit "Impossible de trouver $i. Résolvez le problème avant de relancer bl-welcome à nouveau."
+    done
+    local file_content="$(<"$filepath")"
+    case "$file_content" in
+    *"$newblock"*"$oldblock"*|*"$oldblock"*"$newblock"*)
+        say "$filepath peut être corrompu."
+        [[ $ref_file ]] && say " Comparez le avec $ref_file et modifier." 4
+        return 1
+        ;;
+    *"$newblock"*)
+        say "$filepath est à jour."
+        return 0
+        ;;
+    *"$oldblock"*)
+        say "La configuration du démarrage a changé. Voulez vous appliquer les derniers changements pour le fichier autostart d openbox?"
+        prompt "Mettre à jour $autostart avec les derniers changements?" || return 0
+        say "Mettre à jour $filepath..."
+        cat <<< "${file_content/"$oldblock"/$'## EDITED BY BL-WELCOME\n'"$newblock"}" > "$filepath"
+        ;;
+    *)
+        say "$filepath semble avoir été édité."
+        [[ $ref_file ]] && say "Vous devez le comparer avec $ref_file et modifier." 4
+        ;;
+    esac
+}
+
+say 'COMPOSITING
+-----------
+'
+update_comp(){
+    local oldblock='bl-compositor --start &
+
+## Start the tint2 session (the default tint2 will run if no sessions have been set)
+(sleep 2s; bl-tint2-session) &'
+    local newblock='## Compton
+## NOTE: composition must be started before tint2
+bl-compositor --start
+
+## Start the tint2 session (the default tint2 will run if no sessions have been set)
+bl-tint2-session'
+    [[ -f $autostart_bkp ]] || cp "$autostart" "$autostart_bkp"
+    replace_block "$oldblock" "$newblock" "$autostart" "$ref_autostart"
+}
+
+update_comp
+
+say '
+PULSE AUDIO
+-----------
+'
+update_audio(){
+    local pulse_autostart="$HOME/.config/autostart/pulseaudio.desktop"
+    local ref_pulse_autostart='/usr/share/bunsen/skel/.config/autostart/pulseaudio.desktop'
+    local volcon_conf="$HOME/.config/volumeicon/volumeicon"
+    local ref_volcon_conf='/usr/share/bunsen/skel/.config/volumeicon/volumeicon'
+    local ob_xml="$HOME/.config/openbox/rc.xml"
+    local ob_xml_bkp="$ob_xml~bl-welcome-$( date +%FT%T )~"
+    say "Vous utilisez le controle du volume BunsenLabs \"Volti\".\
+ Nous recommandons \"Volumeicon\", avec une configuration de démarrage légérement différente de pulseaudio.\
+ Voulez vous remplacer volti par volumeicon, et reconfigurer PulseAudio?"
+    prompt 'Mettre à jour Audio config?' || return 0
+    for i in "$ref_pulse_autostart" "$ref_volcon_conf"
+    do
+        [[ -f $i ]] || errorExit "Imposible de trouver $i. résolvez le problème avant de relancer bl-welcome à nouveau."
+    done
+    safeRemove --purge volti xfce4-volumed || { say 'Impossible de retirer le paquet!' 4; return 1;}
+    safeInstall volumeicon-alsa || { say 'Impossible d installer volumeicon-alsa!' 4; return 1;}
+    say "Updating $autostart..."
+    local oldblock='## Start the Conky session (the default conkyrc will run if no sessions have been set)
+(sleep 2s; bl-conky-session --autostart) &
+
+## Controle du Volume barre Tint2
+(sleep 2; volti) &
+
+## Touches Volume
+xfce4-volumed &'
+    local newblock='## Démarrer PulseAudio
+## (Cela remplace /etc/xdg/autostart/pulseaudio.desktop
+## Qui est désactivé par ~/.config/autostart/pulseaudio.desktop.)
+## NOTE: PulseAudio peut être démarré avant volumeicon
+bl-start-pulseaudio-x11
+
+## Controle du Volume barre Tint2
+volumeicon &
+
+## Démarrer la session Conky (Le conkyrc par défaut s'exécutera si aucune session n'a été définie)
+bl-conky-session --autostart &'
+    [[ -f $autostart_bkp ]] || cp "$autostart" "$autostart_bkp"
+    replace_block "$oldblock" "$newblock" "$autostart" "$ref_autostart"
+    say 'disabling pulse autostart file...'
+    mkdir -p "${pulse_autostart%/*}" || return 1
+    [[ -f $pulse_autostart ]] && mv "$pulse_autostart" "$pulse_autostart~bl-welcome-$( date +%FT%T )~"
+    cp "$ref_pulse_autostart" "$pulse_autostart" || return 1
+    say 'installing volumeicon config...'
+    mkdir -p "${volcon_conf%/*}" || return 1
+    [[ -f $volcon_conf ]] && mv "$volcon_conf" "$volcon_conf~bl-welcome-$( date +%FT%T )~"
+    cp "$ref_volcon_conf" "$volcon_conf" || return 1
+    say 'commenting out XF86Audio entries from rc.xml...'
+    cp "$ob_xml" "$ob_xml_bkp"
+    awk  -v outfile="$ob_xml" 'BEGIN{
+        RS="</keybind>\n"
+    }
+    /<keybind key=/{
+        $0 = $0 "</keybind>"
+    }
+    /XF86Audio/{
+        $0 = "<!--\n" $0 "\n-->"
+    }
+    {
+        print > outfile
+    }' "$ob_xml_bkp"
+    say 'done!' 4
+}
+
+if allInstalled volti && ! allInstalled volumeicon-alsa
+then
+    update_audio || errorExit 'Quelque chose à mal fonctionné durant la mise à jour audio.'
+else
+    say 'Ne pas toucher aux paramètres audio.' 2
+fi
+
+

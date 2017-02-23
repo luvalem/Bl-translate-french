@@ -1,0 +1,36 @@
+# Vérifier les composants manquants 'contrib non-free' dans apt sources
+
+haveSources() {
+    grep -qP "^deb +(?=.*debian)$mirror_regex +jessie(?=.*main)(?=.*contrib)(?=.*non-free)( +[a-z-]+){1,3} *$" /etc/apt/sources.list
+}
+
+addSources() {
+    local bkp_list=/etc/apt/sources.list~bl-welcome-$(date +%y%m%dT%T)~
+    sudo cp /etc/apt/sources.list "$bkp_list"
+    sed -r "/debian/ s/(${mirror_regex//\//\\/} +jessie(|\/updates|-updates))( +[a-z-]+){0,3} *\$/\1 main contrib non-free/" "$bkp_list" | sudo tee /etc/apt/sources.list >/dev/null
+}
+
+setupPage $"vérification des Dépôts" $"Vérification de la liste des sources pour d'éventuels composants manquants..."
+
+if haveSources
+then
+    say $"OK - Touts les composants trouvés."
+else
+    say $"une configuration BunsenLabs normale utilise les composants'contrib' and 'non-free' des dépôts Debian,\
+ mais ils semblent absent de votre apt sources list. Sans eux il vous sera impossible d'installer certains paquets,\
+ pour exemple Flash Plugins. Voulez vous ajouter les dépôts 'contrib' and 'non-free' à votre sources list?"$'\n'
+    if prompt 'enable "contrib" and "non-free"?' Y
+    then
+        addSources
+        if haveSources
+        then
+            say $"Fait!"
+        else
+            say $"Edition des sources list échouée. Ce script va quitter.
+SVP ouvrez /etc/apt/sources.list dans un éditeur de texte and vérifiez les entrées avant de relancer bl-welcome à nouveau." pause
+            exit 1
+        fi
+    else
+        say $"Continuer quand même..."
+    fi
+fi

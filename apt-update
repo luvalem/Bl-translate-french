@@ -1,0 +1,14 @@
+UPDATE_TITLE=$"Mettre à jour les sources"
+UPDATE_TEXT=$"Avant de continuer, nous devons être sûr que les sources de votre système sont à jour."' '$"Ce script vas maintenant executer la commande:"'
+
+    sudo apt-get update'
+UPDATE_PROMPT=$"Voulez vous mettre à jour les sources?"
+
+if setupPage "$UPDATE_TITLE" "$UPDATE_TEXT" "$UPDATE_PROMPT"
+then
+    safeUpdate
+else
+    say 'Il est necessaire de mettre à jour vos sources pour continuer le script.
+Exiting...' 2
+    exit 0
+fi

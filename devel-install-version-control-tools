@@ -1,0 +1,3 @@
+installPage $"version control tools" \
+    $"Voulez-vous installer des outils de contrôle de version couramment utilisés?" \
+    'bunsen-meta-vcs'
