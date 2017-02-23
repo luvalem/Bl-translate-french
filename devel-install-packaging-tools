@@ -1,0 +1,11 @@
+DEBIAN_DEVENV_TITLE=$"debian packaging tools"
+DEBIAN_DEVENV_TEXT=$"Voulez-vous installer une suite de paquetages utilisés pour développer des paquets Debian?"
+DEBIAN_DEVENV_PBUILDER=$"Créer maintenant l'environnement pbuilder?"
+
+if installPage "$DEBIAN_DEVENV_TITLE" "$DEBIAN_DEVENV_TEXT" 'bunsen-meta-packaging'; then
+    echo 'MIRRORSITE=http://httpredir.debian.org/debian' | sudo tee '/etc/pbuilderrc'
+    echo 'DISTRIBUTION=jessie' | sudo tee -a '/etc/pbuilderrc'
+    echo 'COMPONENTS="main contrib non-free"' | sudo tee -a '/etc/pbuilderrc'
+
+#    prompt "  $DEBIAN_DEVENV_PBUILDER" && sudo pbuilder create
+fi
