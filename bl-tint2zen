@@ -1,0 +1,165 @@
+#!/bin/bash
+#
+#    bl-tint2zen: un script BunsenLabs Tint2 de sélection et switcher
+#    Copyright (C) 2015 damo    <damo@bunsenlabs.org>
+#    Traduis par Luvalem
+#
+#    Ce programme est un logiciel libre: vous pouvez le redistribuer
+#    et / ou le modifier selon les termes de la Licence Publique 
+#    Générale GNU publiée par la Free Software Foundation,
+#    soit la version 3 de la licence, soit (à votre choix)
+#    toute version ultérieure.
+#
+#    Ce programme est distribué dans l'espoir qu'il sera utile,
+#    Mais SANS AUCUNE GARANTIE; Sans même la garantie implicite de
+#    QUALITÉ MARCHANDE OU ADAPTATION À UN USAGE PARTICULIER.  Voir la
+#    GNU General Public License pour plus de détails.
+#
+#   Vous devriez avoir reçu une copie de la Licence Publique 
+#   Générale GNUavec ce programme.  Sinon, voir 
+#   <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#
+#   Le fichier de configuration Tint2 doit être dans $TINT2PATH
+#
+#   Lorsque la boîte de dialogue s'ouvre, toute tint2s en cours 
+#   d'exécution seront cochée.
+#
+#   Cliquez sur "OK" et toutes les tint2s en cours d'exécution sont arrêtés,
+#   et tous les tint2s cochés sont démarrés
+#
+#   Pour arrêter un tint2, décochez-le et "OK"
+#
+#   L'exécution de tint2s est enregistrée dans un fichier de session et
+#   peut être exécutée avec le script "tint2-session".
+#   Pour les démarrer lors de la connexion, ajoutez la ligne suivante 
+#   a autostart:
+#           bl-tint2-session
+#
+########################################################################
+
+TINT2PATH="$HOME/.config/tint2"
+SESSIONFILE="$TINT2PATH/tint2-sessionfile"
+USAGE="\v\tUSAGE:\n\tWith no command argument, the script uses the chosen
+\tTint2 session file \"$TINT2PATH/tint2-sessionfile\",
+\tif it exists, otherwise the default tint2rc is used
+\v\tTo start them at login, add the following line to autostart:
+\v\t\t(sleep 2s && bl-tint2-session) &"
+
+### DIALOG VARIABLES
+DLGDEC="yad --center --borders=20 "
+TITLE="BunsenLabs Tint2 Manager"
+WINICON="--window-icon=distributor-logo-bunsenlabs"
+OK="--button=OK:0"
+CANCEL="--button=gtk-cancel:1"
+########################################################################
+
+tintRunning(){
+    # faire un fichier temporaire pour enregistrer les chemins running tint2
+    TEMPFILE=$(mktemp --tmpdir tint2.XXXX)
+    pgrep -a tint2 | while read pid cmd; do
+        if [[ ${cmd%% *} = tint2 ]]; then
+            TPATH=$(echo $cmd | awk '{print $NF}')
+            echo $TPATH >> $TEMPFILE
+        fi
+    done
+}
+
+fillArrays(){
+    num="$1"
+    tintsPath[$num]="$2"   # Chemin de fichier complet vers tint2
+    tintsArr[$num]="$3"    # Nom affiché
+    # Voir si le nom correspond à l'un des tints en cours d'exécution
+    if grep -qx "$2" "$TEMPFILE";then # Si tint2 est en cours d'exécution (lecture à partir de tempfile)
+        checkArr[$num]="TRUE"       # Cochez la case de dialogue
+    else
+        checkArr[$num]="FALSE"
+    fi
+}
+
+findTint(){
+# recherche de repertoire pour les fichiers config Tint2
+    num=0
+    for x in $(find $TINT2PATH -type f );do
+        # test le probable fichier de configuration tint2
+        pm=$(grep  "panel_monitor" "$x")
+        if [[ $pm ]];then
+            TINT2=$( echo $x | awk -F"/" '{print $(NF-1)"/"$NF}')
+            fillArrays $num $x $TINT2
+            num=$(($num+1))
+        fi
+    done
+}
+
+# Obtenir des arguments de ligne de commande
+if ! (( $# == 0 ));then
+    for arg in "$@";do
+        if [[ $1 = "-h" ]] || [[ $1 = "--help" ]];then
+            echo -e "$USAGE"
+            exit 0
+        else
+            echo -e "\tERROR: Désolé je ne comprends pas l'entrée"
+            echo -e "$USAGE"
+            exit 0
+        fi
+    done
+fi
+# Obtenir les répertoires tint2 dans .tint2, ajouter au tableau
+tintRunning
+findTint
+
+# Boucler les tableaux et créer un texte msg pour la boîte de dialogue yad
+unset LISTTINT
+for ((j=0; j<${#tintsArr[*]}; j++));do
+    LISTTINT="$LISTTINT ${checkArr[j]} ${tintsArr[j]}"
+done
+
+## Populate dialog from array, get return value(s)
+RET=$($DLGDEC $WINICON --list --title="$TITLE" \
+    --text="Selection de Tint2s dans la liste:" \
+    --checklist --width=350 --height=300 \
+    --column="Select" --column="tint2 Name" $LISTTINT --separator=":" \
+    $OK $CANCEL \
+    )
+
+if (( $? == 1 )); then # Bouton d'annulation enfoncé
+    exit 0
+else
+    > $SESSIONFILE    # Créer un nouveau fichier de session
+    # Boucler les choix retournés, ajouter au tableau
+    i=0
+    OIFS=$IFS   # Copie originale IFS
+    IFS=":"     # separator is ":" in returned choices
+    for name in $RET; do
+        retTint[$i]=$name
+        i=$(($i+1))
+    done
+    IFS=$OIFS    # Réinitialiser IFS
+
+    # Tuer toutes les instances tint2s
+    pgrep -a tint2 | while read pid cmd; do
+        if [[ ${cmd%% *} = tint2 ]]; then
+            kill "$pid"
+        fi
+    done
+
+    for name in ${retTint[*]};do       # Boucle à travers les noms tint2 cochés
+        for ((j=0; j<${#tintsPath[*]}; j++));do  # Par des éléments
+            for f in ${tintsPath[j]};do
+                display=$( echo $f | awk -F"/" '{print $(NF-1)"/"$NF}')
+                # Voir si elle correspond au nom renvoyé
+                if [[ $display = $name ]];then
+                    echo -e "$f" >> $SESSIONFILE
+                    tint2 -c "$f" &  #Démarrer tint2
+                    sleep 1s
+                fi
+            done
+        done
+    done
+#    bl-compositor --restart &   # restart compositor
+fi
+
+rm -r $TEMPFILE
+
+exit 0
