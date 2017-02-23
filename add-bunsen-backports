@@ -1,0 +1,59 @@
+ADD_BL_BACKPORTS_TITLE=$"BunsenLabs Backports"
+ADD_BL_BACKPORTS_TEXT=$"Les backports de BunsenLabs sont des paquets issus d autres versions Debian ou Debian, ou d autres sources telles que GitHub, ajuste et recompile pour une utilisation sur Debian stable.\
+ Si vous activez ce depot, vous pourrez mettre a niveau certains programmes vers des versions plus recentes, ou installer certains programmes non disponibles dans Debian stable.
+
+Cependant, les backports de BunsenLabs ne sont pas testes en profondeur, Et sont fournis en tant que base, avec le risque d incompatibilites avec d autres composants dans Debian stable.\
+ Il est donc conseille de considerer soigneusement si vous avez besoin d un package backport avant de choisir de l installer.
+
+Cela va ajouter la ligne:
+
+ deb http://pkg.bunsenlabs.org/debian jessie-backports main
+
+a /etc/apt/sources.list.d/bunsen-jessie-backports.list,
+Vous permettant de mettre a niveau ou d installer des packages à l'aide de ce depot."
+ADD_BL_BACKPORTS_PROMPT=$"Voulez-vous activer les depots BunsenLabs Backports?"
+ADD_BL_BACKPORTS_EXTRA_ARG='N'
+
+haveBunsenBackports() {
+    shopt -s nullglob # in case there is nothing in sources.list.d/
+    grep -qE '^deb +http://pkg.bunsenlabs.org/debian +jessie-backports +main( *| .*)$' /etc/apt/sources.list{,.d/*}
+    local retval=$?
+    shopt -u nullglob
+    return $retval
+}
+addBunsenBackports() {
+    if haveBunsenBackports
+    then
+        say 'Les backports de BunsenLabs ont deja ete ajoutes a apt sources.' 2
+    else
+        say $'\nAjouter BunsenLabs backports to apt sources...\n' 1
+        local bp_repo="# added by bl-welcome
+# BunsenLabs backports
+deb http://pkg.bunsenlabs.org/debian jessie-backports main
+
+"
+        cat <<< "$bp_repo" | sudo tee /etc/apt/sources.list.d/bunsen-jessie-backports.list >/dev/null
+        grep -q '^deb http://pkg.bunsenlabs.org/debian jessie-backports main' /etc/apt/sources.list.d/bunsen-jessie-backports.list || {
+            say 'Echec de l ajout des backports BunsenLabs aux sources apt.' pause >&2
+            return 1
+        }
+        say $'\nupdating apt...\n'
+        safeUpdate || say 'Continuer en depit du probleme de mise à jour...' 2
+    fi
+}
+
+if haveBunsenBackports
+then
+    setupPage "$ADD_BL_BACKPORTS_TITLE" $"Les backports de BunsenLabs ont deja ete ajoutes a apt sources."
+else
+    if setupPage "$ADD_BL_BACKPORTS_TITLE" "$ADD_BL_BACKPORTS_TEXT" "$ADD_BL_BACKPORTS_PROMPT" "$ADD_BL_BACKPORTS_EXTRA_ARG"; then
+        if addBunsenBackports
+        then
+            say "Ajoute avec succes BunsenLabs backports.\
+ Vous pouvez ajouter ou mettre a niveau des packages a l aide de la commande suivante:
+ sudo apt-get install -t jessie-backports <packagename>" pause
+        else
+            say "Impossible d ajouter des backports, aller a la page suivante." 3
+        fi
+    fi
+fi
