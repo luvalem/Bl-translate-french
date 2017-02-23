@@ -1,0 +1,206 @@
+#!/usr/bin/env lua5.2
+
+-- bl-recent-files-pipemenu - Openbox recent-files pipemenu
+-- Copyright (C) 2015 Jens John <dev@2ion.de>
+--
+--   Ce programme est un logiciel libre: vous pouvez le redistribuer
+--   et / ou le modifier selon les termes de la Licence Publique 
+--   Générale GNU publiée par la Free Software Foundation,
+--   soit la version 3 de la licence, soit (à votre choix)
+--   toute version ultérieure.
+--
+--   Ce programme est distribué dans l'espoir qu'il sera utile,
+--   Mais SANS AUCUNE GARANTIE; Sans même la garantie implicite de
+--   QUALITÉ MARCHANDE OU ADAPTATION À UN USAGE PARTICULIER.  Voir la
+--   GNU General Public License pour plus de détails.
+--
+--  Vous devriez avoir reçu une copie de la Licence Publique 
+--  Générale GNUavec ce programme.  Sinon, voir 
+--  <http://www.gnu.org/licenses/>.
+
+
+local posix = require 'posix'
+local url = require 'socket.url'
+local xml = require 'pl.xml'
+-- compatibility with Lua 5.1/LuaJIT
+if _VERSION == "Lua 5.1" then
+  table.unpack = unpack
+end
+
+-- Menu root
+local M = xml.new("openbox_pipe_menu")
+
+local function quote(s)
+  return string.format("%q", s)
+end
+
+local function printf(f, ...)
+  io.stderr:write(string.format(f, ...) .. '\n')
+end
+
+--- Désinfection d'une URL de fichier à utiliser dans une étiquette de menu
+-- @param s (string) Input string
+-- @return sanitized string
+local function decode_url(s)
+  local s = s
+
+  s = s:gsub("_", "__")           -- Empêcher les underscores de devenir des raccourcis
+
+  if s:find("%", 1, true) then    -- Décoder les séquences d'échappement d'URL% -style
+    s = url.unescape(s)
+  end
+
+  return s
+end
+
+local function mk_item_tag(label, actions)
+  return xml.elem("item", { label = label, table.unpack(actions)})
+end
+
+local function mk_action_tag(name, command_tag)
+  return xml.elem("action", { name = name, command_tag })
+end
+
+local function mk_command_tag(cmd, args)
+  return xml.elem("command"):text(quote(cmd) .. ' ' .. quote(args))
+end
+
+local function add_executable_item(m, label, cmd, args)
+  m:add_direct_child(
+    mk_item_tag(label, {
+      mk_action_tag("Execute", mk_command_tag(cmd, args))
+    }))
+end
+
+--- Crée un menu de fichiers récemment utilisés à partir du contenu d'un fichier XBEL
+-- En ajoutant au menu donné. En cliquant, le fichier sera ouvert.
+-- @param m (XML object) Le menu pour ajouter les éléments à
+-- @param path (string) XBEL chemin du fichier
+-- @param reverse_output (boolean) True: l'entrée de menu la plus récente apparaît au
+-- menu's top, false: Entrée du menu la plus ancienne apparaît en haut
+-- @param cnt (number) Limiter les entrées de menu aux éléments $cnt
+-- @param override_cmd (string) Ouvrez tous les fichiers à l'aide de cette commande
+-- au lieu de l'application initialement affectée
+-- @Renvoie l'objet XML en cas de succès, sinon nil
+local function add_items_from_xbel(m, path, reverse_output, cnt, override_cmd)
+  local function clean_executable_name(s)
+    return s:match("([^'^%s]+)")
+  end
+
+  local x = xml.parse(path, true)
+  if not x then return nil end
+
+  local buf, c = {}, 0
+
+  for bookmark in x:childtags() do
+    local file = bookmark:get_attribs().href
+    local apps = bookmark:get_elements_with_name("bookmark:application")
+    local prop = apps[#apps]:get_attribs()
+    local i = mk_item_tag(decode_url(posix.basename(file)), {
+        mk_action_tag("Execute", mk_command_tag(override_cmd or clean_executable_name(prop.exec), file))
+      })
+    if reverse_output then
+      table.insert(buf, 1, i)
+    else
+      table.insert(buf, i)
+    end
+  end
+
+  for i,v in ipairs(buf) do
+    if cnt and i > cnt then break end
+    m:add_direct_child(v)
+  end
+end
+
+--- Ajoute un élément de menu pour basculer une action de fichier tronqué
+-- @param m (XML object) menu
+-- @param path (string) Chemin pour exécuter l'action sur
+local function add_remove_file_item(m, path)
+  m:add_direct_child(
+    mk_item_tag("Effacer Fichiers Recents",
+      {mk_action_tag("Execute", mk_command_tag("rm", path))})
+    )
+  m:add_direct_child(xml.elem("separator"))
+end
+
+--- Ajoute un élément sans action disant qu'il n'y a pas de fichiers récents
+-- @param m (XML object) menu
+local function add_is_empty_message(m)
+  m:add_direct_child(
+    mk_item_tag("Pas de Fichiers Recents.", {})
+  )
+end
+
+--- Imprime le menu XML Openbox à stdout
+-- @path m (XML object) menu
+local function print_menu(m)
+  print(xml.tostring(m, "", "  "))
+end
+
+--- Recherchez le fichier recently-used.xbel dans les emplacements standard XDG
+-- @rRetourne le chemin du fichier en tant que chaîne s'il réussit, sinon nil
+local function detect_xbel_path()
+  local hp = os.getenv("HOME")
+  local xh = os.getenv("XDG_DATA_HOME")
+  local fn = "recently-used.xbel"
+  local function check_path(t)
+    for _,p in ipairs(t) do
+      if posix.access(p) then return p end
+    end
+    return nil
+  end
+  return check_path{
+    string.format("%s/%s", xh, fn),
+    string.format("%s/.local/share/%s", hp, fn),
+    string.format("%s/.%s", hp, fn)
+  }
+end
+
+local function main()
+  local xbel_path, reverse, cnt, override = detect_xbel_path(), false, false, false
+  for o, optarg, opterr in posix.getopt(arg, "hf:l:o:r", {
+    { "limit",    "required", 'l' },
+    { "help",     "none",     'h' },
+    { "file",     "required", 'f' },
+    { "reverse",  "none",     'r' },
+    { "open-cmd", "required", 'o' }}) do
+    if o == '?' then
+      printf("Option non valide ou argument manquant: %s", arg[opterr-1])
+      return 1
+    elseif o == 'h' then
+      printf([[Usage: %s [-h|--help] [-f|--file XBEL] [-l|--limit NUM] [-o|--open-cmd CMD] [-r|--reverse]
+Where: -h, --help       Affiche ce message et sort
+       -f, --file       Spécifiez le chemin d'accès à un fichier 'recently-used.xbel', omis afin de détecter automatiquement
+       -l, --limit      Inclure jusqu'à NUM éléments dans le menu
+       -o, --open-cmd   Les fichiers ouverts utilisant CMD, par défaut les fichiers seront ouverts dans leur application d'origine
+       -r, --reverse    Mettez les éléments les plus récemment utilisés en haut du menu]], arg [0])
+      return 0
+    elseif o == 'f' then
+      xbel_path = optarg
+      if not posix.access(xbel_path) then
+        printf("Avertissement: Le fichier XBEL spécifié par l'utilisateur n'existe pas: %s", xbel_path)
+      end
+    elseif o == 'l' then
+      cnt = tonumber(optarg)
+    elseif o == 'o' then
+      override = optarg
+    elseif o == 'r' then
+      reverse = true
+    end
+  end
+
+  if xbel_path then
+    add_remove_file_item(M, xbel_path)
+    add_items_from_xbel(M, xbel_path, reverse, cnt, override)
+  end
+
+  if #M == 0 then
+    add_is_empty_message(M)
+  end
+
+  print_menu(M)
+
+  return 0
+end
+
+os.exit(main())
