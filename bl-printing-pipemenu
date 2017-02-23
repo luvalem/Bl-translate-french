@@ -1,5 +1,5 @@
 #!/bin/bash
-#    bl-printing-pipemenu an Openbox pipemenu for configuring printing old
+#    bl-printing-pipemenu an Openbox pipemenu for configuring printing
 #    Copyright (C) 2012 Philip Newborough   <corenominal@corenominal.org>
 #    Copyright (C) 2013 Aleks-Daniel Jakimenko
 #    Copyright (C) 2015 John Crawley    <john@bunsenlabs.org>
@@ -20,12 +20,12 @@
 #   Générale GNUavec ce programme.  Sinon, voir 
 #   <http://www.gnu.org/licenses/>.
 
-HELP='    bl-printing-pipemenu un pipe menu Openbox pour configurer l impression
+HELP='    bl-printing-pipemenu un pipe menu Openbox pour configurer l`impression
     Il est normalement appelé par le menu Openbox.
 
 Options (Généralement passé du menu):
     -h --help   Affiche ce message
-    --install   installe le support d impression
+    --install   Installe le support d`impression
 
     Si bl-printing-pipemenu est appelé sans options (la méthode usuelle),
     il sortira un fichier openbox pipemenu xml
@@ -51,12 +51,12 @@ fi
 
 if [[ $1 = '--install' ]]; then
 
-    terminalCheck -T 'Installer le support d imprimante' --install
+    terminalCheck -T 'Installer le support d`imprimante' --install
 
-    promptInstall 'PRINTING SUPPORT' 'Ce script installera le support d impression.' 'bunsen-meta-printer-support'
+    promptInstall 'PRINTING SUPPORT' 'Ce script installera le support d`impression.' 'bunsen-meta-printer-support'
 
 elif [[ $1 ]]; then
-    echo "$0: Pas d option $*" >&2
+    echo "$0: Pas d'option $*" >&2
     exit 1
 
 else
