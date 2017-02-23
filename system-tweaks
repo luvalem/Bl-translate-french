@@ -1,0 +1,101 @@
+#############
+# temporary fix to avoid breaking 'add-debian-backports'
+[[ $- = *u* ]] || {
+    log "bw-welcome has not set -o nounset"
+    say "Le paquet «bunsen-welcome» a été mis à niveau.
+Ce script à changé, donc il doit être relancé.
+Please wait a moment..." 4
+    exec >/dev/tty 2>&1 # so terminalCheck() doesn't open a new terminal
+    exec "$0"
+}
+#############
+
+setupPage $"system tweaks" $"Test du système pour de possibles améliorations..."
+
+autostart="$HOME/.config/openbox/autostart"
+autostart_bkp="${autostart}~bl-welcome-$( date +%FT%T )~"
+
+say 'NOYAU PAE
+----------
+'
+
+if ! grep -wq pae /proc/cpuinfo
+then
+    say $"Votre processeur ne supporte pas PAE."
+elif dpkg -l | grep -Eq '^ *ii +linux-image-[^ ]*(amd64|pae) '
+then
+    say $"Vous avez un noyau PAE activé et installé."
+else
+    say $"Votre processeur supporte PAE, mais vous n avez pas de noyau activé et installé. Voulez vous en installer un maintenant?" 2
+    promptInstall 'Noyau PAE' 'Ce script va installer un noyau linux supportant PAE.' 'linux-image-686-pae' || say 'Continuer malgré le problème d installation...' 2
+fi
+
+say '
+TEST LAPTOP
+------------
+'
+
+removeFdpowermon() {
+    safeRemove fdpowermon fdpowermon-icons || say 'Poursuivre malgré le problème lors de la désinstallation...' 2
+    say $'Commenter fdpowermon dans le fichier autostart...\n' 1
+    [[ -f $autostart ]] || errorExit "Impossible de trouver le fichier $autostart. Résolvez le problème et relancez bl-welcome à nouveau."
+    cp "$autostart" "$autostart_bkp"
+    sed -i '/fdpowermon/s/^/#/' "$autostart"
+}
+
+upgradePower() {
+    shopt -s nullglob # in case there is nothing in sources.list.d/
+    if grep -qE '^deb +http://pkg.bunsenlabs.org/debian +jessie-backports +main( *| .*)$' /etc/apt/sources.list{,.d/*}
+    then
+        say 'BunsenLabs backports ont été ajouté à apt sources.' 2
+    else
+        say $'Ajouter BunsenLabs backports à apt sources...\n' 1
+        cat <<EOF | sudo tee /etc/apt/sources.list.d/bunsen-jessie-backports.list >/dev/null
+# added by bl-welcome
+# BunsenLabs backports
+deb http://pkg.bunsenlabs.org/debian jessie-backports main
+
+EOF
+        grep -q '^deb http://pkg.bunsenlabs.org/debian jessie-backports main' /etc/apt/sources.list.d/bunsen-jessie-backports.list || {
+            say 'Impossible d ajouter BunsenLabs backports à apt sources.' pause >&2
+            return 1
+        }
+        say $'\nupdating apt...\n'
+        safeUpdate || say 'Continuer en dépit du problème de mise à jour...' 2
+    fi
+    shopt -u nullglob
+
+    say $'Mise à niveau de xfce4-power-manager...\n'
+    if safeInstall --target-release=jessie-backports xfce4-power-manager
+    then
+        say 'xfce4-power-manager mis à niveau.'
+    else
+        say "Impossible de mettre à niveau xfce4-power-manager." 2
+        return 1
+    fi
+
+    allInstalled fdpowermon && {
+        say $'Désinstaller fdpowermon...\n'
+        removeFdpowermon
+    }
+}
+
+if sudo laptop-detect
+then
+    say $"Il semble que ce soit un ordinateur portable."
+    if [[ $(checkOrigin xfce4-power-manager) = *bunsenlabs.org* ]]
+    then
+        say 'xfce4-power-manager'$" est mis à jour depuis BunsenLabs backports."
+    else
+        say $"Il est possible d'avoir le dépôt BunsenLabs backports et mettre à jour xfce4-power-manager. Ceci ajoutera une icône batterie ameliorée dans tint2.
+Le paquet fdpowermon sera désinstallé." 1
+        prompt $"Ajouter Bunsenlabs backports, Mettre à jour xfce4-power-manager?" && upgradePower
+    fi
+else
+    say $"Il ne semble pas que ce soit un ordinateur portable." 1
+    if allInstalled fdpowermon
+    then
+        say $"Vous pouvez enlever l icône de batterie du paquet fdpowermon." 1
+        prompt $"Enlever fdpowermon?" && removeFdpowermon
+    fi
+fi

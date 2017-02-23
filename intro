@@ -1,0 +1,36 @@
+tput clear
+header
+say \
+'   _   _ _____ _     _     ___
+  | | | | ____| |   | |   / _ \
+  | |_| |  _| | |   | |  | | | |
+  |  _  | |___| |___| |__| |_| |
+  |_| |_|_____|_____|_____\___/
+
+'"Hello $USER, "$"Bienvenue sur BunsenLabs Linux! :)
+
+Ceci est un script post-installation, afin de vous aider a configurer votre installation et tirer le meilleur parti de BunsenLabs.
+
+Vous aurez le choix entre plusieurs options. votre mot de passe sera demandé.
+
+Vous aurez besoin d'une connexion internet active.
+
+Si vous le desirez vous pourrez utiliser ce script plus tard en entrant la commande \"bl-welcome\" dans votre terminal.
+
+(les messages seront sauvés dans ""$logfile"')
+'
+
+prompt $"  Tapez \"Enter\" pour continuer, ou \"q\" pour quitter..." Q && exit 0
+
+say '
+Svp entrez votre mot de passe maintenant.
+(vous pourriez devoir l`entrer à nouveau plus tard.)'
+if sudo -v
+then
+    say 'Merci.'
+else
+    errorExit 'Vous n`avez pas l`autorisation d`utiliser sudo,
+Ceci est nécessaire pour continuer.
+Faites le nécessaire et essayez a nouveau.'
+fi
+
