@@ -33,7 +33,7 @@ Options (Généralement passé du menu):
 
     Si bl-graphics-pipemenu est appelé sans options (La méthode habituelle),
     il sortira un fichier openbox pipemenu xml
-    pour le lancement et l installation d applications graphiques.
+    pour le lancement et l`installation d`applications graphiques.
 
 Voir ~/.config/openbox/pipemenus.rc pour les options de configuration.
 '
