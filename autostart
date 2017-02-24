@@ -1,0 +1,91 @@
+## Openbox autostart
+## ====================
+##Lorsque vous vous connectez à votre session OpenBunsenLabs, ce script de démarrage automatique
+##sera exécuté pour configurer votre environnement et lancer toutes les applications
+##que vous souhaitez exécuter au démarrage.
+##
+## Note: certains procgrammes comme 'nm-applet' son lancé depuis XDG autostart.
+## lancer
+## /usr/lib/i386-linux-gnu/openbox-xdg-autostart --list
+## or
+## /usr/lib/x86_64-linux-gnu/openbox-xdg-autostart --list
+## pour lister chaque programme XDG auto démarré.
+##
+## Plus d'informations à ce sujet peuvent être trouvée à:
+## http://openbox.org/wiki/Help:Autostart
+##
+## Si vous faites quelque chose de cool avec votre script autostart et que
+## vous pensez que d'autres pourraient bénéficier de votre hack, 
+## SVP envisagez de le partager à:
+## http://forums.bunsenlabs.org (registration required)
+##
+
+## DÉMARRAGE DES PARAMÈTRES
+
+## Configurer le touchpad. voir 'man synaptics' pour plus d'informations.
+synclient VertEdgeScroll=1 HorizEdgeScroll=1 TapButton1=1 2>/dev/null
+
+## Définir les paramètres du clavier - 250 ms delay and 25 cps (caractères par seconde) Taux de répétition.
+## Ajustez les valeurs en fonction de vos préférences.
+xset r rate 250 25
+
+## Activer/désactiver le bip du système.
+xset b off
+
+## Ajouter un mappage clavier.
+#xmodmap -e "keysym Insert = Multi_key"
+
+## FIN DE RÉGLAGES
+
+## Authentification du kit de stratégie GNOME
+/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1 &
+
+nitrogen --restore &
+
+## EDITED BY BL-WELCOME
+## Compton
+## NOTE: composition must be started before tint2
+bl-compositor --start
+
+## Start the tint2 session (the default tint2 will run if no sessions have been set)
+bl-tint2-session
+
+## Démarrer PulseAudio
+## (ceci remplace /etc/xdg/autostart/pulseaudio.desktop
+## qui est désactivé par ~/.config/autostart/pulseaudio.desktop.)
+## NOTE: PulseAudio peut être activé avant volumeicon
+bl-start-pulseaudio-x11
+
+## Icône du Volume pour la barre Tint2
+volumeicon &
+
+## Démarre la session Conky (conkyrc par défaut sera exécuté si aucune session n'a été définie)
+bl-conky-session --autostart &
+
+## Démarre le gestionnaire de presse papier
+(sleep 3; clipit) &
+
+## Démarre le démon Thunar, Si défini comme bl-file-manager
+if [ "$(readlink -f $(which bl-file-manager))" = "$(which thunar)" ]
+then
+    thunar --daemon &
+fi
+
+## Démarre et garde la configuration d'arrière plan (Fond d'écran)
+nitrogen --restore &
+
+## Active la gestion de l'alimentation
+xfce4-power-manager &
+
+## Démarre l'applet de batterie
+#(sleep 2; fdpowermon) &
+
+## Démarre économiseur d'écran (Light-locker maintenant utilisé par défaut, exécuté via XDG autostart.)
+#xscreensaver -no-splash &
+
+## bl-welcome - script de post-installation , ne fonctionne pas en session live et
+## démarre une seule fois. Sûr à enlever.
+(sleep 10; bl-welcome --firstrun) &
+
+## bl-fortune - Le système dém&rre avec un petit adage (pas encore activé)
+#(sleep 120; bl-fortune) &
